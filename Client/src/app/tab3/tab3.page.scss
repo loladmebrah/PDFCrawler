@@ -1,0 +1,26 @@
+.item-card {
+    height: 20vh;
+    ion-card-header{
+        height: 5vh;
+    }
+    ion-card-content{
+        height: 15vh;
+    }
+    .title{
+        font-size: 3vh;
+    }
+    .content{
+        font-size: 12px;
+    }
+    .item{
+        height: 10vh;
+    }
+    .img-avatar{
+        height: 4vh;
+        width: 4vh;
+    }
+    .checkbox{
+        height: 2vh;
+        width: 2vh;
+    }   
+}

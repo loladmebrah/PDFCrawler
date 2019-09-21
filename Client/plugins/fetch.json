@@ -1,0 +1,10 @@
+{
+  "cordova-plugin-filechooser": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-filechooser"
+    },
+    "is_top_level": true,
+    "variables": {}
+  }
+}

@@ -1,0 +1,36 @@
+.iconSel {
+    width: 25px;
+    height: 25px;
+}
+
+.title:hover{
+    background: var(--ion-color-light-shade)
+}
+
+.iconSel:hover {
+    width: 30px;
+    height: 30px;
+    color: var(--ion-color-success);
+}
+
+.iconUnSel {
+    width: 25px;
+    height: 25px;
+}
+
+.iconUnSel:hover {
+    width: 30px;
+    height: 30px;
+    color: var(--ion-color-danger);
+}
+
+.iconTrSel {
+    width: 25px;
+    height: 25px;
+}
+
+.iconTrSel:hover {
+    width: 30px;
+    height: 30px;
+    color: var(--ion-color-warning);
+}

@@ -1,0 +1,72 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title class="ion-text-center">
+      Obtener Fuentes
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-grid style="margin-top: 5%">
+    <ion-row>
+        <ion-col size="4">
+            <ion-button expand="block" shape="round" (click)="SelectAll()">Seleccionar todo</ion-button>
+        </ion-col>
+        <ion-col size="4">
+            <ion-button expand="block" shape="round" (click)="DeSelectAll()">Deseleccionar todo</ion-button>
+        </ion-col>
+        <ion-col size="4">
+          <ion-button expand="block" shape="round" (click)="EraseAll()">Eliminar Fuentes</ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="isLoading">
+      <ion-col>
+        <ion-row>
+            <ion-item>
+                <ion-label position="floating">Status</ion-label>
+                <ion-input disabled style="margin-top:20px">{{progress.status}}</ion-input>
+            </ion-item>
+        </ion-row>
+        <ion-row>
+            <ion-item>
+                <ion-label position="floating">Total progress {{ round(progress.value * 100)}} % </ion-label>
+                <ion-input disabled style="margin-top:20px">{{progress.index}} / {{progress.length}}</ion-input>
+            </ion-item>
+        </ion-row>
+        <ion-row>
+          <ion-col size="8" offset="2" style="margin-top:20px">
+            <ion-progress-bar value="{{progress.value}}"></ion-progress-bar>
+          </ion-col>
+        </ion-row>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+      <ion-col>
+        <ion-card class="scrollable-div">
+          <ion-card-content>
+              <ion-card *ngFor="let item of files; let i=index;" class="item-card">
+                  <ion-card-header>
+                    <ion-card-title class="title">{{i + 1}}. {{item.name}}</ion-card-title>
+                    {{ item.category }}
+                  </ion-card-header>
+                  <ion-card-content style="margin-top: 25px">
+                      <ion-item class="item">
+                        <ion-avatar slot="start" class="img-avatar" > <ion-img [src]="item.imgSrc" ></ion-img> </ion-avatar>
+                        <ion-label class="content" >Url: {{ item.url }}</ion-label>
+                        <ion-checkbox slot="end" [(ngModel)]="item.isDownloadable" class="checkbox"></ion-checkbox>
+                      </ion-item>
+                  </ion-card-content>
+              </ion-card>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+    <ion-row>
+        <ion-col size="4" offset="4">
+            <ion-button expand="block" shape="round" style="margin-top: 10%;" (click)="generateSources()">Generar Fuentes</ion-button>
+        </ion-col>
+    </ion-row>
+  </ion-grid>
+  
+
+</ion-content>

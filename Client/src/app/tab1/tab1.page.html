@@ -1,0 +1,19 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title class="ion-text-center">
+      Cargar archivos directrices
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+    <ion-card class="welcome-card">
+      <ion-card-header>
+        <ion-card-title>Seleccione los archivos a cargar</ion-card-title>        
+      </ion-card-header>
+      <ion-card-content >
+        <p>Recuerde que solo es posible procesar archivos csv y excel.</p>
+        <app-multi-file-upload #uploader></app-multi-file-upload>
+      </ion-card-content>
+    </ion-card>
+</ion-content>

@@ -1,0 +1,7 @@
+{
+  "name": "SIFIC-Crawler",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular"
+}
