@@ -42,33 +42,31 @@ app.get('/scrape/*', (req, res) => {
 
 app.get('/request/*', (req, res) => {
   let url_ = req.params[0];
-  testCalling(url_, res);
+  remoteCalling(url_, res);
 });
 
-async function testCalling(url, response){
+
+async function remoteCalling(url, clientResponse){
   url = url.replace(/\$/g, '?')
   let filename = url.substring(url.lastIndexOf('/')+1).replace(/\W/g, '')+'.pdf';
-  let file = fs.createWriteStream(filename);
   await new Promise((resolve, reject)=>{
-      url_ = (url.match(/(http:|https:)/g) != null)? url: 'http://'+url;
-      request().pipe(file)
-      .on('finish', (file_)=>{
-          console.log('finished downloading ',[url,file.bytesWritten]);
-          file.close();
-          resolve(file);
-      })
-      .on('error', (error)=>{
-          console.log("we failed on "+url, error);
-          reject(error);
-      })
-  })
-  .then((file_, filename_, response_)=>{
-    sendFinalResponse(file_, filename_, response_);
-  })
-  .catch(error=>{
+    url_ = (url.match(/(http:|https:)/g) != null)? url: 'http://'+url;
+    request(createHeaders(url_)).on('response', remoteRes => {
+      remoteRes.headers["Access-Control-Allow-Origin"] = "*";
+      remoteRes.headers["Access-Control-Allow-Headers"] = "X-Requested-With";
+      remoteRes.headers["Content-Type"] = "application/pdf";
+      remoteRes.headers["Content-Disposition"] = "attachment; filename="+filename+'"';
+    }).pipe(clientResponse).on('finish', (something)=>{
+      resolve(something);
+    }).on('error', err=>{
+      if(err) reject(JSON.stringify(err));
+    });
+  }).then((data)=>{
+      console.log("resolved", [url_, data]);
+  }).catch(error=>{
       console.log(`we failed: ${error}`);
-      response.status(500).json({ type: 'error', message: JSON.stringify(error) });
-  })
+      clientResponse.status(500).json({ type: 'error', message: JSON.stringify(error) });
+  });
 }
 
 function createHeaders(url){

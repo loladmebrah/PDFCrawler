@@ -21,9 +21,7 @@ export class ApiService {
   }
 
   request(url:string): Observable<any>{
-    return this.http.get(`${this.apiUrl}/request/${url}`).pipe(
-      map(results => results)
-    );
+    return this.http.get(`${this.apiUrl}/request/${url}`, { responseType: 'blob'});
   }
 
 }

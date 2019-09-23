@@ -3,6 +3,7 @@ import { Storage } from '@ionic/storage';
 import { AlertController } from '@ionic/angular';
 import { EventManagerService } from '../services/eventManager/event-manager.service';
 import { ApiService } from '../services/api/api.service';
+import { saveAs } from 'file-saver';
 
 interface link  {
   uri: string,
@@ -53,55 +54,29 @@ export class Tab2Page {
     });
   }
 
-  /*
-    const a = document.createElement('a');
-    document.body.appendChild(a);
-    a.style.display = 'none';
-
-    const blob = new Blob(next, {type: "octet/stream"}),
-    const url = window.URL.createObjectURL(blob);
-    a.href = url;
-    a.download = name;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  */
-
   async saveData(){
     let finalURLArray = [];
     for (let index = 0; index < this.scraped.length; index++) {
       for (let jndex = 0; jndex < this.scraped[index].links.length; jndex++) {
         if(this.scraped[index].links[jndex].isDownloadable){
-          console.log("asking for", this.scraped[index].links[jndex].uri);
-          let element = await this.downloadLinkFromUrl(this.scraped[index].links[jndex].uri);
-          //this.download_file(this.scraped[index].links[jndex].uri, this.scraped[index].links[jndex].uri.substring(this.scraped[index].links[jndex].uri.lastIndexOf('/')-1)+'.pdf')
-          finalURLArray.push(this.scraped[index].links[jndex].uri);
+          await this.downloadLinkFromUrl(this.scraped[index].links[jndex].uri)
+          .then((resp)=>{
+            finalURLArray.push(resp);
+          }).catch((rejec)=>{
+            finalURLArray.push(rejec);
+          });          
         }
       }
     }
     console.log(finalURLArray);
-    /*this.scraped.forEach(element => {
-      element.links.forEach(link => {
-        if(link.isDownloadable) {
-          
-          finalURLArray.push();
-        }
-      });
-    });*/
-    /*Promise.all(finalURLArray).then(()=>{
-      console.log(finalURLArray);
-    }).catch(error=>{
-      console.log(error);
-    });*/
   }
 
   downloadLinkFromUrl(uri){
     return new Promise((resolve, reject)=>{
-      console.log("downloading",uri);
       let request = this.apiService.request(uri.replace(/[?]/g, '$'));
       request.subscribe(
         response=>{
-          console.log("response found",response);
-          //this.domDownload(uri, response);
+          saveAs(response, this.createNameForFile(uri) );
           resolve(uri);
         },
         error=>{
@@ -112,76 +87,20 @@ export class Tab2Page {
     });
   }
 
-  download_file(fileURL, fileName) {
-    
-    var reqObj = new XMLHttpRequest();
-    reqObj.open('GET',fileURL,true);     // 'getpdf' is the URI to recongize your request at the server
-    reqObj.send();
-
-    reqObj.onreadystatechange = function() {
-        var resObj = this;
-        if(resObj.readyState == resObj.DONE) {
-            if (resObj.status != 200) {
-                console.log("pdf can't be downloaded");
-            } else if (resObj.status == 200){
-                var resTxt = reqObj.responseText;
-                window.location.assign(resTxt);    // Opens the pdf download prompt
-            }
-        }
+  createNameForFile(uri){
+    let reference = uri.substring(0, uri.indexOf('.co'));
+    reference = reference.substring(reference.indexOf('.')+1);
+    let name;
+    if(uri.indexOf('.pdf')!=-1){
+      name = uri.substring(uri.indexOf('/'),uri.lastIndexOf('.pdf')+4);
+      name = name.substring(name.lastIndexOf('/')+1);
+    }else{
+      name = uri.substring(uri.lastIndexOf('/')+1);
+      name = (name.indexOf('?')!=-1)? name.substring(0, name.indexOf('?')+1)+'.pdf':name+'.pdf';
     }
-    
-    //var save = document.createElement('a');
-    //save.style.display = 'none';
-    //let save = (<HTMLImageElement>document.querySelector('#my_iframe'));
-    //save.src = 'http://'+fileURL;
-    /*(<HTMLImageElement>document.querySelector('#my_iframe')).target = fileURL;
-    save.href = fileURL;
-    save.target = '_blank';
-    var filename = fileURL.substring(fileURL.lastIndexOf('/')+1);
-    save.download = fileName || filename;*/
-    //save.click();
-    // for non-IE
-    /*if (!window.ActiveXObject) {
-        var save = document.createElement('a');
-        save.href = fileURL;
-        save.target = '_blank';
-        var filename = fileURL.substring(fileURL.lastIndexOf('/')+1);
-        save.download = fileName || filename;
-	       if ( navigator.userAgent.toLowerCase().match(/(ipad|iphone|safari)/) && navigator.userAgent.search("Chrome") < 0) {
-				document.location = save.href; 
-			}else{
-		        var evt = new MouseEvent('click', {
-		            'view': window,
-		            'bubbles': true,
-		            'cancelable': false
-		        });
-		        save.dispatchEvent(evt);
-		        (window.URL || window.webkitURL).revokeObjectURL(save.href);
-			}	
-    }
-
-    // for IE < 11
-    else if ( !! window.ActiveXObject && document.execCommand)     {
-        var _window = window.open(fileURL, '_blank');
-        _window.document.close();
-        _window.document.execCommand('SaveAs', true, fileName || fileURL)
-        _window.close();
-    }*/
-}
-
-  domDownload(uri, blobber){
-      var clickable;
-      clickable = document.createElement('a');
-      document.body.appendChild(clickable);
-      clickable.style.display = 'none';
-      const blob = new Blob(blobber, {type: "octet/stream"});
-      const url = window.URL.createObjectURL(blob);
-      clickable.href = uri;
-      clickable.download = uri+'.pdf';
-      clickable.click();
-      //clickable.parentNode.removeChild(clickable);
-      window.URL.revokeObjectURL(url);
+    return reference+"_"+name;
   }
+
 
   setFilteredItems(name) {
     if(this.searchCtrl[name]!="" && this.searchCtrl[name]!=undefined && this.searchCtrl[name]!=null)
