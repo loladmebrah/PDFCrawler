@@ -3,7 +3,6 @@ const express = require('express');
 const request = require('request');
 const cheerio = require('cheerio');
 const UserAgent = require ('user-agents');
-const fs = require('fs');
 const cors = require('cors');
 const URL = require('url').URL;
 
@@ -16,16 +15,16 @@ request.prototype.request = function () {
 const app = express();
 var browser;
 
-var whitelist = ['http://localhost:8050','http://localhost:8100'];
+var whitelist = ['http://localhost:8050','http://localhost:8100','http://localhost:4200', 'https://SkyBlueServer.sat0-k4.repl.co:4200', null,undefined];
 
 var corsOptions = {
   origin: function (origin, callback) {
     if (whitelist.indexOf(origin) !== -1) callback(null, true);
-    else callback(new Error('Not allowed by CORS, try again'));
+    else callback(new Error('Not allowed by CORS, try again '+JSON.stringify([origin, whitelist.indexOf(origin)])));
   }
 }
 
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -46,12 +45,13 @@ app.get('/request/*', (req, res) => {
 });
 
 
-async function remoteCalling(url, clientResponse){
-  url = url.replace(/\$/g, '?')
+async function remoteCalling(url_, clientResponse){
+  let url = url_.replace(/\$/g, '?')
   let filename = url.substring(url.lastIndexOf('/')+1).replace(/\W/g, '')+'.pdf';
   await new Promise((resolve, reject)=>{
-    url_ = (url.match(/(http:|https:)/g) != null)? url: 'http://'+url;
-    request(createHeaders(url_)).on('response', remoteRes => {
+    console.log("scraping..."+url);
+    url = (url.match(/(http:|https:)/g) != null)? url: 'http://'+url;
+    request(createHeaders(url)).on('response', remoteRes => {
       remoteRes.headers["Access-Control-Allow-Origin"] = "*";
       remoteRes.headers["Access-Control-Allow-Headers"] = "X-Requested-With";
       remoteRes.headers["Content-Type"] = "application/pdf";
@@ -62,7 +62,7 @@ async function remoteCalling(url, clientResponse){
       if(err) reject(JSON.stringify(err));
     });
   }).then((data)=>{
-      console.log("resolved", [url_, data]);
+      console.log("Succesfully scraped pdf ... "+url);
   }).catch(error=>{
       console.log(`we failed: ${error}`);
       clientResponse.status(500).json({ type: 'error', message: JSON.stringify(error) });
@@ -84,29 +84,9 @@ function createHeaders(url){
   };
 }
 
-function sendFinalResponse(file, filename, response){
-  if(file){
-    response.header("Access-Control-Allow-Origin", "*");
-    response.header("Access-Control-Allow-Headers", "X-Requested-With");
-    response.header("Content-Type", "application/pdf");
-    response.header('Content-Disposition: attachment; filename="'+filename+'"');
-    response.send(file);
-  }else{
-    response.status(500).json({ type: 'error', message: "NO FILE COULD BE DOWNLOADED" });
-  }
-}
 
 function makeRequest(url_, res){
-  //const protocol = "http://";
-  //const country = 'US'
-  /*request('https://www.proxy-list.download/api/v1/get?type='+protocol.replace('://','')+'&anon=elite&country='+country,(er, resp, bod)=>{
-    let forDeletion = [''];
-    let data = bod.split('\r\n').filter(item => !forDeletion.includes(item));
-    //generateCall(url_,res, protocol+data[data.length * Math.random() | 0]);
-    generateCall(url_,res, protocol+'136.244.113.211:8080');
-  })*/
   generateCall(url_, res);
-  
 }
 
 async function generateCall(url_, res, proxy_){
@@ -119,7 +99,6 @@ async function generateCall(url_, res, proxy_){
   let r = await requestData(userAgent, url_, res);
   return r;
 }
-
 
 
 function processPage(body, originUrl){

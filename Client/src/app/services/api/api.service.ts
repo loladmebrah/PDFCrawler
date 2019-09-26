@@ -7,11 +7,11 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class ApiService {
-  private isProd = false;
+  private isProd = true;
   private apiUrl: string;
   constructor(private http: HttpClient) { 
     if(!this.isProd) this.apiUrl = 'http://localhost:4200';
-    else this.apiUrl = 'http://newDomain:4200';
+    else this.apiUrl = 'https://SkyBlueServer.sat0-k4.repl.co:4200';
   }
 
   scrape(url: string): Observable<any> {

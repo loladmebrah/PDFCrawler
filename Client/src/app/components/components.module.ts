@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
-import { MultiFileUploadComponent } from './multi-file-upload/multi-file-upload.component';
+//import { MultiFileUploadComponent } from './multi-file-upload/multi-file-upload.component';
 
 @NgModule({
-    declarations:[MultiFileUploadComponent],
-    exports: [MultiFileUploadComponent]
+    declarations:[],
+    exports: []
 })
 
 export class ComponentsModule{}

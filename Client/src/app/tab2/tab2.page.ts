@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { Storage } from '@ionic/storage';
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
 import { EventManagerService } from '../services/eventManager/event-manager.service';
 import { ApiService } from '../services/api/api.service';
 import { saveAs } from 'file-saver';
+import { reject } from 'q';
 
 interface link  {
   uri: string,
@@ -30,7 +31,11 @@ export class Tab2Page {
   scrapedDisplay: any = [];
 
   
-  constructor(private storage: Storage, public alertController: AlertController, private evManager: EventManagerService, private apiService: ApiService) {
+  constructor(private storage: Storage, 
+    public alertController: AlertController, 
+    private evManager: EventManagerService,
+    private apiService: ApiService,
+    private loadingController: LoadingController) {
     this.evManager.eventManager.on('SourcesLoaded',()=>{
       this.storage.get('SOURCES').then((value)=>{
         if (value) {
@@ -55,35 +60,61 @@ export class Tab2Page {
   }
 
   async saveData(){
+
     let finalURLArray = [];
+    let promiseArray = [];
+
+    const loading = await this.loadingController.create(this.generateLoadingOptions());
+    await loading.present();
+    
+    this.scrapePDF(finalURLArray, async (data)=>{
+      await loading.dismiss();
+      this.alertDownload();
+    });
+
+  }
+
+  async scrapePDF(finalURLArray, callback){
+    let err, solution;
     for (let index = 0; index < this.scraped.length; index++) {
       for (let jndex = 0; jndex < this.scraped[index].links.length; jndex++) {
         if(this.scraped[index].links[jndex].isDownloadable){
-          await this.downloadLinkFromUrl(this.scraped[index].links[jndex].uri)
-          .then((resp)=>{
-            finalURLArray.push(resp);
-          }).catch((rejec)=>{
-            finalURLArray.push(rejec);
-          });          
-        }
+          [err, solution] = await this.to(this.downloadLinkFromUrl(this.scraped[index].links[jndex].uri));
+          if(err) {
+            finalURLArray.push({status:"failure", data: err});
+          }else if (solution){
+            finalURLArray.push({status:"success", data: solution});
+          }
+        }           
       }
     }
-    console.log(finalURLArray);
+    callback(finalURLArray);
+  }
+
+  generateLoadingOptions(){
+    return {
+      spinner: null,
+      message: 'Descargando...',
+      translucent: true,
+      cssClass: 'custom-class custom-loading'
+    }
   }
 
   downloadLinkFromUrl(uri){
     return new Promise((resolve, reject)=>{
-      let request = this.apiService.request(uri.replace(/[?]/g, '$'));
-      request.subscribe(
-        response=>{
-          saveAs(response, this.createNameForFile(uri) );
-          resolve(uri);
-        },
-        error=>{
-          console.log("error found", error);
-          reject(error);
-        }
-      );
+      setTimeout(()=>{
+        let request = this.apiService.request(uri.replace(/[?]/g, '$'));
+        request.subscribe(
+          response=>{
+            saveAs(response, this.createNameForFile(uri) );
+            resolve(uri);
+          },
+          error=>{
+            console.log("error found", error);
+            reject(error);
+          }
+        );
+      },200);
     });
   }
 
@@ -116,11 +147,11 @@ export class Tab2Page {
     });
   }
 
-  async alertConfig() {
+  async alertDownload() {
     const alert = await this.alertController.create({
-      header: 'Configuración',
-      subHeader: 'Estas son las opciones de configuración definidas:',
-      message: this.getFeatures(),
+      header: 'Listo!',
+      subHeader: 'Se han descargado todos los pdfs seleccionados',
+      message: 'Por favor revise su carpeta de descargas',
       buttons: ['OK']
     });
 
@@ -170,9 +201,9 @@ export class Tab2Page {
     this.evManager.eventManager.emit('DeletedSources');
   }
 
-  orderLinks(links: Array<link>){
-    return links.sort(function (a:link , b:link) {
-      return (a.isDownloadable == b.isDownloadable)? 0: a.isDownloadable? -1: 1;
+  orderLinks(links: Array<link>, value){
+    return links.filter((a: link)=>{
+      return a.isDownloadable == value;
     });
   }
 
@@ -199,4 +230,61 @@ export class Tab2Page {
     });
     return count;
   }
+
+  getSmollName(value){
+    let i = 3;
+    while(value[i]==undefined && i>-1){ i -=1;  }
+    return value[i];
+  }
+
+  async presentAlertConfirm() {
+    const alert = await this.alertController.create({
+      header: 'Alto!',
+      message: '¿Está seguro de haber configurado correctamente su carpeta de descargas?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          cssClass: 'secondary',
+          handler: () => {
+          }
+        }, {
+          text: 'De acuerdo',
+          handler: () => {
+            this.saveData();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  getSmallName(uri){
+    return (this.nth_occurrence(uri,'/',3) !=-1)? uri.substring(this.nth_occurrence(uri,'/',3), uri.length): uri.substring(this.nth_occurrence(uri,'/',1), uri.length);
+  }
+
+  nth_occurrence (string, char, nth) {
+      var first_index = string.indexOf(char);
+      var length_up_to_first_index = first_index + 1;
+
+      if (nth == 1) {
+          return first_index;
+      } else {
+          var string_after_first_occurrence = string.slice(length_up_to_first_index);
+          var next_occurrence = this.nth_occurrence(string_after_first_occurrence, char, nth - 1);
+          if (next_occurrence === -1) {
+              return -1;
+          } else {
+              return length_up_to_first_index + next_occurrence;  
+          }
+      }
+  }
+
+  to(promise) {
+    return promise.then(data => {
+       return [null, data];
+    }).catch(err => [err]);
+  }
+
 }
